@@ -20,5 +20,10 @@ class HomeController @Inject() extends Controller {
   def index = Action {
     Ok(views.html.index("Your new application is ready."))
   }
+  
+  def rateTrack = Action { request => 
+    request.body.asJson.get
+    Ok
+  }
 
 }

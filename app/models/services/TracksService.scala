@@ -14,15 +14,16 @@ class TracksService() {
   val tracks = TableQuery[Track]
     
   
-  def rateAndInsertTrack(spotifyId: String, name: String, stars: Short) = {
-    val insertAction = DBIO.seq(Track.map(t => (t.spotifyId, t.name, t.stars)) returning Track.map(_.id) += {
-      (spotifyId, name, Some(stars))
+  def rateAndInsertTrack(spotifyId: String, name: String, stars: Short) =
+    hasTrackBeenRated(spotifyId).map(result => {
+      if(result.isEmpty) {
+        val insertAction = DBIO.seq(Track.map(t => (t.spotifyId, t.name, t.stars)) returning Track.map(_.id) += {
+          (spotifyId, name, Some(stars))
+        })
+        
+        Await.result(db.run(insertAction), Duration.Inf)
+      }
     })
-    
-    try {
-      Await.result(db.run(insertAction), Duration.Inf)
-    } finally db.close
-  }
   
   def hasTrackBeenRated(spotifyId: String) = db.run(tracks.filter(_.spotifyId === spotifyId).result)
   

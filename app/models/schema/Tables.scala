@@ -22,12 +22,12 @@ trait Tables {
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param spotifyId Database column spotify_id SqlType(text)
    *  @param name Database column name SqlType(text)
-   *  @param stars Database column stars SqlType(int2), Default(None) */
-  case class TrackRow(id: Int, spotifyId: String, name: String, stars: Option[Short] = None)
+   *  @param stars Database column stars SqlType(int4), Default(None) */
+  case class TrackRow(id: Int, spotifyId: String, name: String, stars: Option[Int] = None)
   /** GetResult implicit for fetching TrackRow objects using plain SQL queries */
-  implicit def GetResultTrackRow(implicit e0: GR[Int], e1: GR[String], e2: GR[Option[Short]]): GR[TrackRow] = GR{
+  implicit def GetResultTrackRow(implicit e0: GR[Int], e1: GR[String], e2: GR[Option[Int]]): GR[TrackRow] = GR{
     prs => import prs._
-    TrackRow.tupled((<<[Int], <<[String], <<[String], <<?[Short]))
+    TrackRow.tupled((<<[Int], <<[String], <<[String], <<?[Int]))
   }
   /** Table description of table track. Objects of this class serve as prototypes for rows in queries. */
   class Track(_tableTag: Tag) extends Table[TrackRow](_tableTag, "track") {
@@ -41,8 +41,8 @@ trait Tables {
     val spotifyId: Rep[String] = column[String]("spotify_id")
     /** Database column name SqlType(text) */
     val name: Rep[String] = column[String]("name")
-    /** Database column stars SqlType(int2), Default(None) */
-    val stars: Rep[Option[Short]] = column[Option[Short]]("stars", O.Default(None))
+    /** Database column stars SqlType(int4), Default(None) */
+    val stars: Rep[Option[Int]] = column[Option[Int]]("stars", O.Default(None))
   }
   /** Collection-like TableQuery object for table Track */
   lazy val Track = new TableQuery(tag => new Track(tag))

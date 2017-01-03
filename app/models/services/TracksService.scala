@@ -13,7 +13,7 @@ class TracksService() {
   val db = Database.forConfig("pg-postgres")
   val tracks = TableQuery[Track]
     
-  def rateAndInsertTrack(spotifyId: String, name: String, stars: Short) =
+  def rateAndInsertTrack(spotifyId: String, name: String, stars: Int) =
     hasTrackBeenRated(spotifyId).map(result => {
       if(result.isEmpty) {
         val insertAction = DBIO.seq(Track.map(t => (t.spotifyId, t.name, t.stars)) returning Track.map(_.id) += {

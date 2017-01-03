@@ -24,7 +24,7 @@ class HomeController @Inject()(implicit ec: ExecutionContext) extends Controller
     val json = request.body.asJson.get
     
     tracksService.rateAndInsertTrack(
-        (json \ "spotify-id").as[String], (json \ "name").as[String], (json \ "stars").as[Short]
+        (json \ "spotify-id").as[String], (json \ "name").as[String], (json \ "stars").as[Int]
     ).map(_ => Ok)
   }
   

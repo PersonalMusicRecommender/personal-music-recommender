@@ -20,7 +20,7 @@ slick <<= slickCodeGenTask // register manual sbt command
 // code generation task
 lazy val slick = TaskKey[Seq[File]]("gen-tables")
 lazy val slickCodeGenTask = (sourceManaged, dependencyClasspath in Compile, runner in Compile, streams) map { (dir, cp, r, s) =>
-  val outputDir = "app/models/schema/"
+  val outputDir = "app/"
   val url = "jdbc:postgresql://localhost:5432/personal_recommender" // connection info for a pre-populated throw-away, in-memory db for this demo, which is freshly initialized on every run
   val jdbcDriver = "org.postgresql.Driver"
   val slickDriver = "slick.driver.PostgresDriver"

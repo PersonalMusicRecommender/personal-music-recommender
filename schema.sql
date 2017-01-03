@@ -6,5 +6,5 @@ CREATE TABLE track(
   id SERIAL PRIMARY KEY,
   spotify_id TEXT NOT NULL,
   name TEXT NOT NULL,
-  stars SMALLINT
+  stars INT
 );

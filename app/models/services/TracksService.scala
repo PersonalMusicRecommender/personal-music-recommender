@@ -13,7 +13,6 @@ class TracksService() {
   val db = Database.forConfig("pg-postgres")
   val tracks = TableQuery[Track]
     
-  
   def rateAndInsertTrack(spotifyId: String, name: String, stars: Short) =
     hasTrackBeenRated(spotifyId).map(result => {
       if(result.isEmpty) {

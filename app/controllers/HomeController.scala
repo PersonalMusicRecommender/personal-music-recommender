@@ -25,7 +25,7 @@ class HomeController @Inject()(implicit ec: ExecutionContext) extends Controller
     
     tracksService.rateAndInsertTrack(
         (json \ "spotify-id").as[String], (json \ "name").as[String], (json \ "stars").as[Int]
-    ).map(_ => Ok)
+    ).map(_ => Ok(Json.toJson(Map("success" -> true))))
   }
   
   def isTrackRated(spotifyId: String) = Action.async { request =>

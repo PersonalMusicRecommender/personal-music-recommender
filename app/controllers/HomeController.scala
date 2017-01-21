@@ -33,5 +33,9 @@ class HomeController @Inject()(implicit ec: ExecutionContext) extends Controller
       Ok(Json.toJson(Map("is-track-rated" -> !f.isEmpty)))
     })
   }
+  
+  def getSpotifyIds() = Action.async { request =>
+    tracksService.getSpotifyIds.map(f => Ok(Json.toJson(f)))
+  }
 
 }

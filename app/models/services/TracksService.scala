@@ -26,6 +26,6 @@ class TracksService() {
   
   def hasTrackBeenRated(spotifyId: String) = db.run(tracks.filter(_.spotifyId === spotifyId).result)
   
-  def getSpotifyIds() = db.run(tracks.map(_.spotifyId).result)
+  def getTracks() = db.run(tracks.result)
   
 }

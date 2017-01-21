@@ -6,6 +6,8 @@ import play.api.mvc._
 import models.services.TracksService
 import scala.concurrent.ExecutionContext
 import play.api.libs.json.Json
+import play.api.libs.json.Writes
+import play.api.libs.json.JsValue
 
 /**
  * This controller creates an `Action` to handle HTTP requests to the
@@ -34,8 +36,23 @@ class HomeController @Inject()(implicit ec: ExecutionContext) extends Controller
     })
   }
   
-  def getSpotifyIds() = Action.async { request =>
-    tracksService.getSpotifyIds.map(f => Ok(Json.toJson(f)))
+  def getTracks() = Action.async { request =>
+    tracksService.getTracks.map(f => {
+      Ok(Json.toJson(f.map(track => RatedTrack(track.name, track.spotifyId, track.stars.get))))
+    })
   }
+  
+  
+  case class RatedTrack(name: String, spotifyId: String, stars: Int)
+  
+  implicit def trackWrites: Writes[RatedTrack] =
+    new Writes[RatedTrack] {
+      def writes(track: RatedTrack): JsValue =
+        Json.obj(
+          "name"        -> track.name,
+          "spotify-id"  -> track.spotifyId,
+          "stars"       -> track.stars
+        )
+    }
 
 }

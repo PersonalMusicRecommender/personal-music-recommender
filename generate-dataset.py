@@ -13,11 +13,27 @@ def request_token():
   r = requests.post(AUTHORIZATION_URL, data = PARAMETERS, headers = AUTH_HEADERS)
   return r.json()['access_token']
 
-def get_track_ids():
-  URL = ''
-  r = requests.get(URL, headers = headers)
+def get_spotify_ids():
+  print 'Requesting rated tracks'
+  URL = 'http://localhost:9000/get-tracks'
+  r = requests.get(URL)
+  return r.json()
+
+def get_audio_analysis(token, spotify_id):
+  HEADERS = {'AUTHORIZATION': 'Bearer ' + token}
+  URL = 'https://api.spotify.com/v1/audio-analysis/' + spotify_id
+
+  print 'Requesting audio analysis for ' + spotify_id
+  r = requests.get(URL, headers = HEADERS)
+  return r.json()['track']
 
 
 token = request_token()
-headers = {'AUTHORIZATION': 'Bearer ' + token}
-url = 'https://api.spotify.com/v1/audio-analysis/{}'
+tracks = get_rated_tracks()
+
+dataset = open('dataset.txt', 'w')
+for track in tracks:
+  audio_analysis = get_audio_analysis(token, track['spotify-id'])
+  dataset.write(audio_analysis['num_samples'] + ',' + audio_analysis['duration'] + ',' + audio_analysis['loudness'] + ',' + audio_analysis['tempo'] + ',' + audio_analysis['tempo_confidence'] + ',' + audio_analysis['time_signature'] + ',' + audio_analysis['time_signature_confidence'] + ',' + audio_analysis['key'] + ',' + audio_analysis['key_confidence'] + ',' + audio_analysis['mode'] + ',' + audio_analysis['mode_confidence'] + ',' + track['stars'] + '\n')
+  dataset.flush()
+dataset.close()

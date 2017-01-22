@@ -28,4 +28,6 @@ class TracksService() {
   
   def getTracks() = db.run(tracks.result)
   
+  def getTracksWithStars(stars: Int) = db.run(tracks.filter(_.stars === stars).result)
+  
 }

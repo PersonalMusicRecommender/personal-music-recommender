@@ -5,7 +5,8 @@
 # An example controller showing a sample home page
 GET     /                           controllers.HomeController.index
 GET		/is-track-rated/:spotifyId	controllers.HomeController.isTrackRated(spotifyId)
-GET		/get-tracks					controllers.HomeController.getTracks()
+GET		/get-tracks					controllers.HomeController.getAllTracks
+GET		/get-tracks/:stars			controllers.HomeController.getTracks(stars)
 
 POST	/rate-track					controllers.HomeController.rateTrack
 

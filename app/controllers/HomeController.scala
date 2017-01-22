@@ -36,8 +36,14 @@ class HomeController @Inject()(implicit ec: ExecutionContext) extends Controller
     })
   }
   
-  def getTracks() = Action.async { request =>
+  def getAllTracks() = Action.async { request =>
     tracksService.getTracks.map(f => {
+      Ok(Json.toJson(f.map(track => RatedTrack(track.name, track.spotifyId, track.stars.get))))
+    })
+  }
+  
+  def getTracks(stars: String) = Action.async { request =>
+    tracksService.getTracksWithStars(stars.toInt).map(f => {
       Ok(Json.toJson(f.map(track => RatedTrack(track.name, track.spotifyId, track.stars.get))))
     })
   }

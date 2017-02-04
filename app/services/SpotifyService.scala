@@ -23,18 +23,24 @@ class SpotifyService(token: String, ws: WSClient)(implicit ec: ExecutionContext)
   
   def getPlaylists = {
     getPlaylistsData.flatMap(playlistsData => {
+      val id1 = playlistsData.find(_.name.contains("1")).get.id
+      val id2 = playlistsData.find(_.name.contains("2")).get.id
+      val id3 = playlistsData.find(_.name.contains("3")).get.id
+      val id4 = playlistsData.find(_.name.contains("4")).get.id
+      val id5 = playlistsData.find(_.name.contains("5")).get.id
+      
       for {
-        stars1 <- requestPlaylistTracks(playlistsData(0).id)
-        stars2 <- requestPlaylistTracks(playlistsData(1).id)
-        stars3 <- requestPlaylistTracks(playlistsData(2).id)
-        stars4 <- requestPlaylistTracks(playlistsData(3).id)
-        stars5 <- requestPlaylistTracks(playlistsData(4).id)
+        stars1 <- requestPlaylistTracks(id1)
+        stars2 <- requestPlaylistTracks(id2)
+        stars3 <- requestPlaylistTracks(id3)
+        stars4 <- requestPlaylistTracks(id4)
+        stars5 <- requestPlaylistTracks(id5)
       } yield Playlists(
-          Playlist(playlistsData(0).id, findTracks(stars1.json)),
-          Playlist(playlistsData(1).id, findTracks(stars2.json)),
-          Playlist(playlistsData(2).id, findTracks(stars3.json)),
-          Playlist(playlistsData(3).id, findTracks(stars4.json)),
-          Playlist(playlistsData(4).id, findTracks(stars5.json))
+          Playlist(id1, findTracks(stars1.json)),
+          Playlist(id2, findTracks(stars2.json)),
+          Playlist(id3, findTracks(stars3.json)),
+          Playlist(id4, findTracks(stars4.json)),
+          Playlist(id5, findTracks(stars5.json))
        )
     })
   }

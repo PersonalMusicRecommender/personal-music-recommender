@@ -10,6 +10,8 @@ import play.api.libs.json.Writes
 import play.api.libs.json.JsValue
 import play.api.libs.ws.WSClient
 import services.SpotifyService
+import util.Domain.RatedTrack
+import services.SyncService
 
 /**
  * This controller creates an `Action` to handle HTTP requests to the
@@ -19,7 +21,7 @@ import services.SpotifyService
 class HomeController @Inject()(ws: WSClient)(implicit ec: ExecutionContext) extends Controller {
   
  val tracksService = new TracksService
- val spotifyService = new SpotifyService("BQCyS4nWWUc8Py2PxBF7cErdwCidTZblsO_BkAid-sK34SsyJnqqenF0wDfCr8WO5H7TPnsgWbWrND8mooQMhZYzG3xcmeZ9rKEma2ELuY9U7RbIWNgPrlwkqgDbTpVfjZ5I74rzcMYXLg", ws)
+ val spotifyService = new SpotifyService("", ws)
 
  def index = Action {
     Ok(views.html.index("Your new application is ready."))
@@ -39,25 +41,26 @@ class HomeController @Inject()(ws: WSClient)(implicit ec: ExecutionContext) exte
   }
   
   def getAllTracks() = Action.async { request =>
-    tracksService.getTracks.map(f => {
-      Ok(Json.toJson(f.map(track => RatedTrack(track.name, track.spotifyId, track.stars.get))))
-    })
+    tracksService.getTracks.map(f => Ok(Json.toJson(f)))
   }
   
   def getTracks(stars: String) = Action.async { request =>
-    tracksService.getTracksWithStars(stars.toInt).map(f => {
-      Ok(Json.toJson(f.map(track => RatedTrack(track.name, track.spotifyId, track.stars.get))))
-    })
+    tracksService.getTracksWithStars(stars.toInt).map(f => Ok(Json.toJson(f)))
   }
   
   def sync() = Action.async { request =>
     //val token = (request.body.asJson.get \ "token").as[String]
     
-    spotifyService.getStarPlaylists.map(f => Ok(f.toString))
+    val f = for {
+      dbPlaylists <- tracksService.getPlaylists
+      sPlaylists  <- spotifyService.getPlaylists
+    } yield (dbPlaylists, sPlaylists)
+    
+    val syncService = new SyncService(tracksService, spotifyService)
+    
+    f.flatMap(f => syncService.sync(f._1, f._2).map(_ => Ok(Json.toJson(Map("success" -> true)))))
   }
   
-  
-  case class RatedTrack(name: String, spotifyId: String, stars: Int)
   
   implicit def trackWrites: Writes[RatedTrack] =
     new Writes[RatedTrack] {

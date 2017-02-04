@@ -21,7 +21,7 @@ import services.SyncService
 class HomeController @Inject()(ws: WSClient)(implicit ec: ExecutionContext) extends Controller {
   
  val tracksService = new TracksService
- val spotifyService = new SpotifyService("BQD0bayh3zbs-VvReOSBCH6ll8SMOJtI5z2p6vymCotUuEmM8RAJWhzbaVU5uz2zpkPhrR6ycZcsVhxL5byfoLp_5qyOBLEmApU0_EXDk0vbt5mTtLgkvxkt3VbWOT719XkAq0P5XHRy8eVLQOxTe_0HQfvPPUubYFvTlMS-TJamta4K6nF4oEJq3A", ws)
+ val spotifyService = new SpotifyService("", ws)
 
  def index = Action {
     Ok(views.html.index("Your new application is ready."))
@@ -59,6 +59,13 @@ class HomeController @Inject()(ws: WSClient)(implicit ec: ExecutionContext) exte
     val syncService = new SyncService(tracksService, spotifyService)
     
     f.flatMap(f => syncService.syncSpotify(f._1, f._2).map(_ => Ok(Json.toJson(Map("success" -> true)))))
+  }
+  
+  def syncDB() = Action.async { request =>
+    //val token = (request.body.asJson.get \ "token").as[String]
+    
+    val syncService = new SyncService(tracksService, spotifyService)
+    spotifyService.getPlaylists.flatMap(p => syncService.syncDB(p).map(f => Ok(Json.toJson(Map("success" -> true)))))
   }
   
   

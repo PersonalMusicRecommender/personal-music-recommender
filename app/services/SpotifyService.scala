@@ -90,6 +90,7 @@ class SpotifyService(token: String, ws: WSClient)(implicit ec: ExecutionContext)
   
   private def requestDeletePlaylistTracks(id: String, tracks: JsValue) = {
     val url = s"https://api.spotify.com/v1/users/$UserId/playlists/$id/tracks"
+    println(id)
     ws.url(url).withHeaders(Headers).withBody(tracks).delete
   }
   

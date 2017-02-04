@@ -10,6 +10,7 @@ GET		/get-tracks/:stars			controllers.HomeController.getTracks(stars)
 
 POST	/rate-track					controllers.HomeController.rateTrack
 GET 	/sync-spotify				controllers.HomeController.syncSpotify
+GET 	/sync-db					controllers.HomeController.syncDB
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)

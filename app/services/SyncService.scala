@@ -10,8 +10,10 @@ class SyncService(tracksService: TracksService, spotifyService: SpotifyService)(
   
   def syncSpotify(dbPlaylists: Playlists, sPlaylists: Playlists) = {
     val playlists = mergePlaylists(dbPlaylists, sPlaylists)
-    updateSpotify(sPlaylists, playlists)
+    spotifyService.deletePlaylists(sPlaylists).flatMap(f1 => spotifyService.addTracksToPlaylists(playlists))
   }
+  
+  def syncDB(sPlaylists: Playlists) = tracksService.updateTracks(sPlaylists)
   
   private def mergePlaylists(dbPlaylists: Playlists, sPlaylists: Playlists) = {
     val stars1 = Playlist(sPlaylists.stars1.id, dbPlaylists.stars1.tracks)
@@ -21,7 +23,5 @@ class SyncService(tracksService: TracksService, spotifyService: SpotifyService)(
     val stars5 = Playlist(sPlaylists.stars5.id, dbPlaylists.stars5.tracks)
     Playlists(stars1, stars2, stars3, stars4, stars5)
   }
-  
-  private def updateSpotify(sPlaylists: Playlists, playlists: Playlists) =
-    spotifyService.deletePlaylists(sPlaylists).flatMap(f1 => spotifyService.addTracksToPlaylists(playlists))
+    
 }

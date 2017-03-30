@@ -45,6 +45,25 @@ class SpotifyService(token: String, ws: WSClient)(implicit ec: ExecutionContext)
     })
   }
   
+  private def getPlaylistsData =
+    requestPlaylistsData.map(r => findPlaylists(r.json).filter(p => PlaylistNames.contains(p.name)))
+    
+  private def requestPlaylistsData = {
+    val url = "https://api.spotify.com/v1/me/playlists"
+    ws.url(url).withHeaders(Headers).get
+  }
+  
+  private def findPlaylists(json: JsValue) =
+    (json \ "items").as[Seq[JsValue]].map(j => PlaylistData((j \ "id").as[String], (j \ "name").as[String]))
+    
+  private def requestPlaylistTracks(id: String) = {
+    val url = s"https://api.spotify.com/v1/users/$UserId/playlists/$id/tracks"
+    ws.url(url).withHeaders(Headers).get
+  }
+  
+  private def findTracks(json: JsValue) =
+    (json \ "items").as[Seq[JsValue]].map(j => (j \ "track" \ "id").as[String]).toSet
+  
   def deletePlaylists(playlists: Playlists) =
     for {
       r1 <- deletePlaylistTracks(playlists.stars1)
@@ -54,6 +73,17 @@ class SpotifyService(token: String, ws: WSClient)(implicit ec: ExecutionContext)
       r5 <- deletePlaylistTracks(playlists.stars5)
     } yield (r1, r2, r3, r4, r5)
     
+  private def deletePlaylistTracks(playlist: Playlist) =
+    Future.sequence(for {
+      uGroups    <- playlist.tracks.grouped(100)
+      jsonTracks =  buildJsonTracks(uGroups)
+    } yield requestDeletePlaylistTracks(playlist.id, jsonTracks))
+    
+  private def requestDeletePlaylistTracks(id: String, tracks: JsValue) = {
+    val url = s"https://api.spotify.com/v1/users/$UserId/playlists/$id/tracks"
+    ws.url(url).withHeaders(Headers).withBody(tracks).delete
+  }
+    
   def addTracksToPlaylists(playlists: Playlists) =
     for {
       r1 <- addTracksToPlaylist(playlists.stars1)
@@ -62,15 +92,6 @@ class SpotifyService(token: String, ws: WSClient)(implicit ec: ExecutionContext)
       r4 <- addTracksToPlaylist(playlists.stars4)
       r5 <- addTracksToPlaylist(playlists.stars5)
     } yield (r1, r2, r3, r4, r5)
-    
-  private def getPlaylistsData =
-    requestPlaylistsData.map(r => findPlaylists(r.json).filter(p => PlaylistNames.contains(p.name)))
-    
-  private def deletePlaylistTracks(playlist: Playlist) =
-    Future.sequence(for {
-      uGroups    <- playlist.tracks.grouped(100)
-      jsonTracks =  buildJsonTracks(uGroups)
-    } yield requestDeletePlaylistTracks(playlist.id, jsonTracks))
   
   private def addTracksToPlaylist(playlist: Playlist) =
     Future.sequence(for {
@@ -78,32 +99,10 @@ class SpotifyService(token: String, ws: WSClient)(implicit ec: ExecutionContext)
       jsonTracks =  buildJsonTracks(uGroups)
     } yield requestAddTracksToPlaylist(playlist.id, jsonTracks))
   
-  private def requestPlaylistsData = {
-    val url = "https://api.spotify.com/v1/me/playlists"
-    ws.url(url).withHeaders(Headers).get
-  }
-  
-  private def requestPlaylistTracks(id: String) = {
-    val url = s"https://api.spotify.com/v1/users/$UserId/playlists/$id/tracks"
-    ws.url(url).withHeaders(Headers).get
-  }
-  
-  private def requestDeletePlaylistTracks(id: String, tracks: JsValue) = {
-    val url = s"https://api.spotify.com/v1/users/$UserId/playlists/$id/tracks"
-    println(id)
-    ws.url(url).withHeaders(Headers).withBody(tracks).delete
-  }
-  
   private def requestAddTracksToPlaylist(id: String, tracks: JsValue) = {
     val url = s"https://api.spotify.com/v1/users/$UserId/playlists/$id/tracks"
     ws.url(url).withHeaders(Headers, "Content-Type" -> "application/json").post(tracks)
   }
-  
-  private def findPlaylists(json: JsValue) =
-    (json \ "items").as[Seq[JsValue]].map(j => PlaylistData((j \ "id").as[String], (j \ "name").as[String]))
-    
-  private def findTracks(json: JsValue) =
-    (json \ "items").as[Seq[JsValue]].map(j => (j \ "track" \ "id").as[String]).toSet
   
   private def buildJsonTracks(tracks: Set[String]) =
     Json.obj("uris" -> tracks.map(uri => s"spotify:track:$uri"))

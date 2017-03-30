@@ -50,12 +50,16 @@ class TracksService() {
   }
   
   def updateTracks(ps: Playlists) = {
-    println(ps.stars5.tracks)
-    val action1 = ps.stars1.tracks.toSeq.map(spotifyId => tracks.filter(_.spotifyId === spotifyId).map(_.stars).update(Some(1)))
-    val action2 = ps.stars2.tracks.toSeq.map(spotifyId => tracks.filter(_.spotifyId === spotifyId).map(_.stars).update(Some(2)))
-    val action3 = ps.stars3.tracks.toSeq.map(spotifyId => tracks.filter(_.spotifyId === spotifyId).map(_.stars).update(Some(3)))
-    val action4 = ps.stars4.tracks.toSeq.map(spotifyId => tracks.filter(_.spotifyId === spotifyId).map(_.stars).update(Some(4)))
-    val action5 = ps.stars5.tracks.toSeq.map(spotifyId => tracks.filter(_.spotifyId === spotifyId).map(_.stars).update(Some(5)))
+    val action1 =
+      ps.stars1.tracks.toSeq.map(spotifyId => tracks.filter(_.spotifyId === spotifyId).map(_.stars).update(Some(1)))
+    val action2 =
+      ps.stars2.tracks.toSeq.map(spotifyId => tracks.filter(_.spotifyId === spotifyId).map(_.stars).update(Some(2)))
+    val action3 =
+      ps.stars3.tracks.toSeq.map(spotifyId => tracks.filter(_.spotifyId === spotifyId).map(_.stars).update(Some(3)))
+    val action4 =
+      ps.stars4.tracks.toSeq.map(spotifyId => tracks.filter(_.spotifyId === spotifyId).map(_.stars).update(Some(4)))
+    val action5 =
+      ps.stars5.tracks.toSeq.map(spotifyId => tracks.filter(_.spotifyId === spotifyId).map(_.stars).update(Some(5)))
     Future.sequence((action1 ++ action2 ++ action3 ++ action4 ++ action5).map(db.run))
   }
   

@@ -22,7 +22,7 @@ import scala.concurrent.Future
 class HomeController @Inject()(ws: WSClient)(implicit ec: ExecutionContext) extends Controller {
   
  val tracksService = new TracksService
- val spotifyService = new SpotifyService("BQCKwL_tkXJwjpFe2DFpbSr3krLPP6wsCVvq25ppZ3BzSJ05kWbS5hQ_Rl5xRxVOb5EeIBoi_wHS5JSwNmr7tFoVisbwpjwTzDtMgO13SsmttYhOlblwY89BqpTUStPLYGtbiyM19D6NfQe9oHcUst8g7_00z1MqgHKgaPOvYQbfyvWAMY4ou6k-hFch3-lZ9HE88fttry28KQFgeY17BBWZZkj9krBY_N5P5w", ws)
+ val spotifyService = new SpotifyService(ws)
 
  def index = Action {
     Ok(views.html.index("Your new application is ready."))
@@ -55,7 +55,7 @@ class HomeController @Inject()(ws: WSClient)(implicit ec: ExecutionContext) exte
   }
   
   def sync() = Action.async { request =>
-    //val token = (request.body.asJson.get \ "token").as[String]
+    spotifyService.token = (request.body.asJson.get \ "token").as[String]
     
     val syncService = new SyncService(tracksService, spotifyService)
     syncService.sync.map(_ => Ok(Json.toJson(Map("success" -> true))))

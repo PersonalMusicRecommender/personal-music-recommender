@@ -12,13 +12,14 @@ import util.Domain.RatedTrack
 import scala.concurrent.Future
 import play.api.libs.ws.WSResponse
 
-class SpotifyService(token: String, ws: WSClient)(implicit ec: ExecutionContext) {
+class SpotifyService(ws: WSClient)(implicit ec: ExecutionContext) {
   
   private val ClientId = "c82f92150a734dce90ecb0a00863eaf5"
   private val ClientSecret = "a485d356b2bc423a89e8c6dfc7183a5d"
   
   private val UserId = "lsgaleana"
-  private val Headers = "Authorization" -> s"Bearer $token"
+  var token = ""
+  private def Headers = "Authorization" -> s"Bearer $token"
   
   private val PlaylistNames = Set("1 stars", "2 stars", "3 stars", "4 stars", "5 stars")
   

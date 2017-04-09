@@ -12,6 +12,7 @@ import play.api.libs.ws.WSClient
 import services.SpotifyService
 import util.Domain.RatedTrack
 import services.SyncService
+import scala.concurrent.Future
 
 /**
  * This controller creates an `Action` to handle HTTP requests to the
@@ -21,7 +22,7 @@ import services.SyncService
 class HomeController @Inject()(ws: WSClient)(implicit ec: ExecutionContext) extends Controller {
   
  val tracksService = new TracksService
- val spotifyService = new SpotifyService("", ws)
+ val spotifyService = new SpotifyService("BQCKwL_tkXJwjpFe2DFpbSr3krLPP6wsCVvq25ppZ3BzSJ05kWbS5hQ_Rl5xRxVOb5EeIBoi_wHS5JSwNmr7tFoVisbwpjwTzDtMgO13SsmttYhOlblwY89BqpTUStPLYGtbiyM19D6NfQe9oHcUst8g7_00z1MqgHKgaPOvYQbfyvWAMY4ou6k-hFch3-lZ9HE88fttry28KQFgeY17BBWZZkj9krBY_N5P5w", ws)
 
  def index = Action {
     Ok(views.html.index("Your new application is ready."))
@@ -30,14 +31,19 @@ class HomeController @Inject()(ws: WSClient)(implicit ec: ExecutionContext) exte
   def rateTrack = Action.async { request =>
     val json = request.body.asJson.get
     val spotifyId = (json \ "spotify-id").as[String]
-    val name = (json \ "spotify-id").as[String]
+    val name = (json \ "name").as[String]
     val stars = (json \ "stars").as[Int]
     
-    tracksService.rateAndInsertTrack(spotifyId, name, stars).map(_ => Ok(Json.toJson(Map("success" -> true))))
+    tracksService.hasTrackBeenRated(spotifyId).flatMap(hasIt =>
+      if(!hasIt)
+        tracksService.rateAndInsertTrack(spotifyId, name, stars).map(_ => Ok(Json.toJson(Map("success" -> true))))
+      else
+        Future { Ok(Json.toJson(Map("success" -> true))) }
+    )
   }
   
   def isTrackRated(spotifyId: String) = Action.async { request =>
-    tracksService.hasTrackBeenRated(spotifyId).map(f => Ok(Json.toJson(Map("is-track-rated" -> !f.isEmpty))))
+    tracksService.hasTrackBeenRated(spotifyId).map(hasIt => Ok(Json.toJson(Map("is-track-rated" -> hasIt))))
   }
   
   def getAllTracks() = Action.async { request =>
@@ -48,24 +54,11 @@ class HomeController @Inject()(ws: WSClient)(implicit ec: ExecutionContext) exte
     tracksService.getTracksWithStars(stars.toInt).map(f => Ok(Json.toJson(f)))
   }
   
-  def syncSpotify() = Action.async { request =>
-    //val token = (request.body.asJson.get \ "token").as[String]
-    
-    val f = for {
-      dbPlaylists <- tracksService.getPlaylists
-      sPlaylists  <- spotifyService.getPlaylists
-    } yield (dbPlaylists, sPlaylists)
-    
-    val syncService = new SyncService(tracksService, spotifyService)
-    
-    f.flatMap(f => syncService.syncSpotify(f._1, f._2).map(_ => Ok(Json.toJson(Map("success" -> true)))))
-  }
-  
-  def syncDB() = Action.async { request =>
+  def sync() = Action.async { request =>
     //val token = (request.body.asJson.get \ "token").as[String]
     
     val syncService = new SyncService(tracksService, spotifyService)
-    spotifyService.getPlaylists.flatMap(p => syncService.syncDB(p).map(f => Ok(Json.toJson(Map("success" -> true)))))
+    syncService.sync.map(_ => Ok(Json.toJson(Map("success" -> true))))
   }
   
   

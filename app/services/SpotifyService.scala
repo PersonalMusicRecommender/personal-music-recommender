@@ -8,6 +8,7 @@ import play.api.libs.json.JsValue
 import util.Domain.PlaylistData
 import util.Domain.Playlists
 import util.Domain.Playlist
+import util.Domain.RatedTrack
 import scala.concurrent.Future
 import play.api.libs.ws.WSResponse
 
@@ -30,17 +31,17 @@ class SpotifyService(token: String, ws: WSClient)(implicit ec: ExecutionContext)
       val id5 = playlistsData.find(_.name.contains("5")).get.id
       
       for {
-        stars1 <- requestPlaylistTracks(id1)
-        stars2 <- requestPlaylistTracks(id2)
-        stars3 <- requestPlaylistTracks(id3)
-        stars4 <- requestPlaylistTracks(id4)
-        stars5 <- requestPlaylistTracks(id5)
+        stars1 <- getPlaylistTracks(id1, 1, 0, Set.empty)
+        stars2 <- getPlaylistTracks(id2, 2, 0, Set.empty)
+        stars3 <- getPlaylistTracks(id3, 3, 0, Set.empty)
+        stars4 <- getPlaylistTracks(id4, 4, 0, Set.empty)
+        stars5 <- getPlaylistTracks(id5, 5, 0, Set.empty)
       } yield Playlists(
-          Playlist(id1, findTracks(stars1.json)),
-          Playlist(id2, findTracks(stars2.json)),
-          Playlist(id3, findTracks(stars3.json)),
-          Playlist(id4, findTracks(stars4.json)),
-          Playlist(id5, findTracks(stars5.json))
+          Playlist(id1, stars1),
+          Playlist(id2, stars2),
+          Playlist(id3, stars3),
+          Playlist(id4, stars4),
+          Playlist(id5, stars5)
        )
     })
   }
@@ -56,13 +57,29 @@ class SpotifyService(token: String, ws: WSClient)(implicit ec: ExecutionContext)
   private def findPlaylists(json: JsValue) =
     (json \ "items").as[Seq[JsValue]].map(j => PlaylistData((j \ "id").as[String], (j \ "name").as[String]))
     
-  private def requestPlaylistTracks(id: String) = {
-    val url = s"https://api.spotify.com/v1/users/$UserId/playlists/$id/tracks"
+  private def getPlaylistTracks(id: String, stars: Int, offset: Int, tracks: Set[RatedTrack]):
+  Future[Set[RatedTrack]] = {
+    val f = requestPlaylistTracks(id, offset)
+    f.flatMap(r => {
+      val moreTracks = findTracks(r.json, stars)
+      if(moreTracks.isEmpty)
+        Future { tracks }
+      else
+        getPlaylistTracks(id, stars, offset + 100, tracks ++ moreTracks)
+    })
+  }
+    
+  private def requestPlaylistTracks(id: String, offset: Int) = {
+    val url = s"https://api.spotify.com/v1/users/$UserId/playlists/$id/tracks?offset=$offset"
     ws.url(url).withHeaders(Headers).get
   }
   
-  private def findTracks(json: JsValue) =
-    (json \ "items").as[Seq[JsValue]].map(j => (j \ "track" \ "id").as[String]).toSet
+  private def findTracks(json: JsValue, stars: Int) =
+    (json \ "items").as[Seq[JsValue]].map(j => RatedTrack(
+         (j \ "track" \ "name").as[String],
+        (j \ "track" \ "id").as[String],
+        stars
+    )).toSet
   
   def deletePlaylists(playlists: Playlists) =
     for {
@@ -76,7 +93,7 @@ class SpotifyService(token: String, ws: WSClient)(implicit ec: ExecutionContext)
   private def deletePlaylistTracks(playlist: Playlist) =
     Future.sequence(for {
       uGroups    <- playlist.tracks.grouped(100)
-      jsonTracks =  buildJsonTracks(uGroups)
+      jsonTracks =  buildJsonTracks(uGroups.map(_.spotifyId))
     } yield requestDeletePlaylistTracks(playlist.id, jsonTracks))
     
   private def requestDeletePlaylistTracks(id: String, tracks: JsValue) = {
@@ -96,7 +113,7 @@ class SpotifyService(token: String, ws: WSClient)(implicit ec: ExecutionContext)
   private def addTracksToPlaylist(playlist: Playlist) =
     Future.sequence(for {
       uGroups    <- playlist.tracks.grouped(100)
-      jsonTracks =  buildJsonTracks(uGroups)
+      jsonTracks =  buildJsonTracks(uGroups.map(_.spotifyId))
     } yield requestAddTracksToPlaylist(playlist.id, jsonTracks))
   
   private def requestAddTracksToPlaylist(id: String, tracks: JsValue) = {
